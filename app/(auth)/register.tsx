@@ -24,7 +24,8 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { login, isLoading } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuthStore();
   const { showSnackbar } = useUIStore();
   const { width } = useWindowDimensions();
   const isWide = Platform.OS === 'web' && width >= 768;
@@ -41,12 +42,28 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!validate()) return;
+    setIsLoading(true);
     try {
-      await login(email, password);
+      // 1. Créer le compte en base
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showSnackbar(data.error || 'Erreur lors de la création du compte.', 'error');
+        setIsLoading(false);
+        return;
+      }
+      // 2. Connecter automatiquement
+      await login(email.trim(), password);
       showSnackbar('Compte créé avec succès ! Bienvenue.', 'success');
       router.replace('/(tabs)/calendrier');
     } catch {
       showSnackbar('Erreur lors de la création du compte.', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
