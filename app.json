@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Afcac-Expo-Meet",
+    "slug": "afcac-expo-meet",
+    "scheme": "afcac-expo-meet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#145847"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourorg.afcacexpomeet"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#145847"
+      },
+      "package": "com.yourorg.afcacexpomeet"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#145847",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Accès à la caméra pour scanner les QR codes de check-in."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Accès à la galerie pour les photos de salles et de profil."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
