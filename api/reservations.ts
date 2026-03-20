@@ -86,7 +86,7 @@ export default async function handler(req: any, res: any) {
           INSERT INTO chat_messages (id,thread_id,sender_id,sender_name,content,type,sent_at,read_by)
           VALUES (${uid()},${threadId},'system','Système',
             ${'Invitation envoyée par ' + initiator.displayName},'system',
-            ${now}::timestamptz,${JSON.stringify([initiator.id])})
+            ${now}::timestamptz,${[initiator.id]})
         `;
         const rows = await sql`SELECT * FROM meeting_invites WHERE id = ${id}`;
         return res.status(201).json(rowToMeeting(rows[0]));
@@ -122,7 +122,7 @@ export default async function handler(req: any, res: any) {
           INSERT INTO chat_messages (id,thread_id,sender_id,sender_name,content,type,sent_at,read_by)
           VALUES (${uid()},${threadId},'system','Système',
             ${'Salle réservée par ' + organizer.displayName},'system',
-            ${now}::timestamptz,${JSON.stringify([organizer.id])})
+            ${now}::timestamptz,${[organizer.id]})
         `;
         const rows = await sql`SELECT * FROM room_reservations WHERE id = ${id}`;
         return res.status(201).json(rowToRoom(rows[0]));

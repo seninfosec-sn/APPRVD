@@ -31,7 +31,7 @@ export default async function handler(req: any, res: any) {
       await sql`
         INSERT INTO chat_messages (id,thread_id,sender_id,sender_name,content,type,sent_at,read_by)
         VALUES (${id},${threadId},${senderId},${senderName},${content},${type},
-                ${now}::timestamptz,${JSON.stringify([senderId])})
+                ${now}::timestamptz,${[senderId]})
       `;
       const rows = await sql`
         SELECT id, thread_id as "threadId", sender_id as "senderId",
