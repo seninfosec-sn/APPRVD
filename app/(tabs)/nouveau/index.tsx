@@ -82,6 +82,9 @@ export default function NouveauScreen() {
   const [selectedRoom, setSelectedRoom] = useState<RoomResult | null>(null);
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [roomDropdownOpen, setRoomDropdownOpen] = useState(false);
+  // Salle pour le rendez-vous bilatéral
+  const [selectedMeetingRoom, setSelectedMeetingRoom] = useState<RoomResult | null>(null);
+  const [meetingRoomOpen, setMeetingRoomOpen] = useState(false);
 
   const { user } = useAuthStore();
   const { createMeeting, createRoomReservation, isLoading } = useReservationStore();
@@ -149,6 +152,7 @@ export default function NouveauScreen() {
         let location: any = undefined;
         if (locationType === 'video') location = { type: 'video', videoUrl: videoUrl || 'https://meet.google.com' };
         else if (locationType === 'address') location = { type: 'address', address };
+        else if (locationType === 'room' && selectedMeetingRoom) location = { type: 'room', roomId: selectedMeetingRoom.id, address: `${selectedMeetingRoom.name} — ${selectedMeetingRoom.building}` };
         await createMeeting({
           title: title.trim(),
           description: description.trim() || undefined,
@@ -440,6 +444,103 @@ export default function NouveauScreen() {
                 placeholder="https://meet.google.com/..."
                 icon="link-outline"
               />
+            )}
+            {locationType === 'room' && (
+              <View style={{ gap: spacing.xs }}>
+                {loadingRooms ? (
+                  <ActivityIndicator color={semanticColors.primary} style={{ marginVertical: spacing.sm }} />
+                ) : Platform.OS === 'web' ? (
+                  <View style={styles.selectWrapper}>
+                    <Ionicons name="business-outline" size={18} color={semanticColors.primary} style={styles.selectIcon} />
+                    <select
+                      value={selectedMeetingRoom?.id || ''}
+                      onChange={(e) => {
+                        const room = rooms.find((r) => r.id === e.target.value) || null;
+                        setSelectedMeetingRoom(room);
+                      }}
+                      style={{
+                        flex: 1, border: 'none', outline: 'none', background: 'transparent',
+                        fontSize: 15,
+                        color: selectedMeetingRoom ? palette.textPrimary : palette.textSecondary,
+                        cursor: 'pointer', paddingRight: 8,
+                      } as any}
+                    >
+                      <option value="">— Choisir une salle —</option>
+                      {rooms.map((room) => (
+                        <option key={room.id} value={room.id} disabled={room.isAvailableNow === false}>
+                          {room.isAvailableNow === false ? '🔴' : '🟢'} {room.name} — {room.building} · {room.capacity} pers.
+                        </option>
+                      ))}
+                    </select>
+                  </View>
+                ) : (
+                  <View>
+                    <TouchableOpacity
+                      style={styles.selectWrapper}
+                      onPress={() => setMeetingRoomOpen((o) => !o)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="business-outline" size={18} color={semanticColors.primary} style={styles.selectIcon} />
+                      <Typography
+                        variant="body"
+                        color={selectedMeetingRoom ? palette.textPrimary : palette.textSecondary}
+                        style={{ flex: 1 }}
+                      >
+                        {selectedMeetingRoom
+                          ? `${selectedMeetingRoom.name} — ${selectedMeetingRoom.building} · ${selectedMeetingRoom.capacity} pers.`
+                          : '— Choisir une salle —'}
+                      </Typography>
+                      <Ionicons
+                        name={meetingRoomOpen ? 'chevron-up' : 'chevron-down'}
+                        size={18}
+                        color={palette.textSecondary}
+                      />
+                    </TouchableOpacity>
+                    {meetingRoomOpen && (
+                      <View style={styles.dropdownList}>
+                        {rooms.map((room, idx) => (
+                          <TouchableOpacity
+                            key={room.id}
+                            style={[
+                              styles.dropdownListItem,
+                              idx < rooms.length - 1 && styles.dropdownListItemBorder,
+                              room.isAvailableNow === false && styles.dropdownListItemDisabled,
+                              selectedMeetingRoom?.id === room.id && styles.dropdownListItemActive,
+                            ]}
+                            onPress={() => {
+                              if (room.isAvailableNow === false) return;
+                              setSelectedMeetingRoom(room);
+                              setMeetingRoomOpen(false);
+                            }}
+                          >
+                            <View style={[styles.availDot, { backgroundColor: room.isAvailableNow !== false ? '#145847' : '#e24b4a' }]} />
+                            <View style={{ flex: 1 }}>
+                              <Typography variant="bodyMedium" color={selectedMeetingRoom?.id === room.id ? semanticColors.primary : palette.textPrimary}>
+                                {room.name}
+                              </Typography>
+                              <Typography variant="caption" color={palette.textSecondary}>
+                                {room.building} · {room.capacity} personnes
+                              </Typography>
+                            </View>
+                            {selectedMeetingRoom?.id === room.id && (
+                              <Ionicons name="checkmark-circle" size={18} color={semanticColors.primary} />
+                            )}
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
+                {selectedMeetingRoom && (
+                  <View style={styles.roomDetail}>
+                    <Ionicons name="information-circle-outline" size={16} color={semanticColors.primary} />
+                    <Typography variant="caption" color={semanticColors.primary}>
+                      {selectedMeetingRoom.name} · {selectedMeetingRoom.building} · {selectedMeetingRoom.capacity} pers. max
+                      {selectedMeetingRoom.isAvailableNow !== false ? ' · Disponible' : ' · Occupée'}
+                    </Typography>
+                  </View>
+                )}
+              </View>
             )}
           </View>
         </>
