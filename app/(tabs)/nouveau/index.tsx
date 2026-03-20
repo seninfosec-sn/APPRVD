@@ -446,99 +446,55 @@ export default function NouveauScreen() {
               />
             )}
             {locationType === 'room' && (
-              <View style={{ gap: spacing.xs }}>
+              <View style={styles.roomPickerBox}>
                 {loadingRooms ? (
-                  <ActivityIndicator color={semanticColors.primary} style={{ marginVertical: spacing.sm }} />
-                ) : Platform.OS === 'web' ? (
-                  <View style={styles.selectWrapper}>
-                    <Ionicons name="business-outline" size={18} color={semanticColors.primary} style={styles.selectIcon} />
-                    <select
-                      value={selectedMeetingRoom?.id || ''}
-                      onChange={(e) => {
-                        const room = rooms.find((r) => r.id === e.target.value) || null;
-                        setSelectedMeetingRoom(room);
-                      }}
-                      style={{
-                        flex: 1, border: 'none', outline: 'none', background: 'transparent',
-                        fontSize: 15,
-                        color: selectedMeetingRoom ? palette.textPrimary : palette.textSecondary,
-                        cursor: 'pointer', paddingRight: 8,
-                      } as any}
-                    >
-                      <option value="">— Choisir une salle —</option>
-                      {rooms.map((room) => (
-                        <option key={room.id} value={room.id} disabled={room.isAvailableNow === false}>
-                          {room.isAvailableNow === false ? '🔴' : '🟢'} {room.name} — {room.building} · {room.capacity} pers.
-                        </option>
-                      ))}
-                    </select>
+                  <View style={styles.roomPickerLoading}>
+                    <ActivityIndicator color={semanticColors.primary} />
+                    <Typography variant="caption" color={palette.textSecondary}>Chargement des salles…</Typography>
+                  </View>
+                ) : rooms.length === 0 ? (
+                  <View style={styles.roomPickerLoading}>
+                    <Ionicons name="alert-circle-outline" size={20} color={palette.textSecondary} />
+                    <Typography variant="caption" color={palette.textSecondary}>Aucune salle disponible</Typography>
                   </View>
                 ) : (
-                  <View>
+                  rooms.map((room, idx) => (
                     <TouchableOpacity
-                      style={styles.selectWrapper}
-                      onPress={() => setMeetingRoomOpen((o) => !o)}
-                      activeOpacity={0.8}
+                      key={room.id}
+                      activeOpacity={0.75}
+                      style={[
+                        styles.roomPickerItem,
+                        idx < rooms.length - 1 && styles.roomPickerItemBorder,
+                        selectedMeetingRoom?.id === room.id && styles.roomPickerItemSelected,
+                        room.isAvailableNow === false && styles.roomPickerItemDisabled,
+                      ]}
+                      onPress={() => {
+                        if (room.isAvailableNow === false) return;
+                        setSelectedMeetingRoom(selectedMeetingRoom?.id === room.id ? null : room);
+                      }}
                     >
-                      <Ionicons name="business-outline" size={18} color={semanticColors.primary} style={styles.selectIcon} />
-                      <Typography
-                        variant="body"
-                        color={selectedMeetingRoom ? palette.textPrimary : palette.textSecondary}
-                        style={{ flex: 1 }}
-                      >
-                        {selectedMeetingRoom
-                          ? `${selectedMeetingRoom.name} — ${selectedMeetingRoom.building} · ${selectedMeetingRoom.capacity} pers.`
-                          : '— Choisir une salle —'}
-                      </Typography>
-                      <Ionicons
-                        name={meetingRoomOpen ? 'chevron-up' : 'chevron-down'}
-                        size={18}
-                        color={palette.textSecondary}
-                      />
-                    </TouchableOpacity>
-                    {meetingRoomOpen && (
-                      <View style={styles.dropdownList}>
-                        {rooms.map((room, idx) => (
-                          <TouchableOpacity
-                            key={room.id}
-                            style={[
-                              styles.dropdownListItem,
-                              idx < rooms.length - 1 && styles.dropdownListItemBorder,
-                              room.isAvailableNow === false && styles.dropdownListItemDisabled,
-                              selectedMeetingRoom?.id === room.id && styles.dropdownListItemActive,
-                            ]}
-                            onPress={() => {
-                              if (room.isAvailableNow === false) return;
-                              setSelectedMeetingRoom(room);
-                              setMeetingRoomOpen(false);
-                            }}
-                          >
-                            <View style={[styles.availDot, { backgroundColor: room.isAvailableNow !== false ? '#145847' : '#e24b4a' }]} />
-                            <View style={{ flex: 1 }}>
-                              <Typography variant="bodyMedium" color={selectedMeetingRoom?.id === room.id ? semanticColors.primary : palette.textPrimary}>
-                                {room.name}
-                              </Typography>
-                              <Typography variant="caption" color={palette.textSecondary}>
-                                {room.building} · {room.capacity} personnes
-                              </Typography>
-                            </View>
-                            {selectedMeetingRoom?.id === room.id && (
-                              <Ionicons name="checkmark-circle" size={18} color={semanticColors.primary} />
-                            )}
-                          </TouchableOpacity>
-                        ))}
+                      {/* Indicateur disponibilité */}
+                      <View style={[styles.availDot, { backgroundColor: room.isAvailableNow !== false ? '#145847' : '#e24b4a', marginTop: 2 }]} />
+                      {/* Infos salle */}
+                      <View style={{ flex: 1 }}>
+                        <Typography
+                          variant="bodyMedium"
+                          color={selectedMeetingRoom?.id === room.id ? semanticColors.primary : palette.textPrimary}
+                        >
+                          {room.name}
+                        </Typography>
+                        <Typography variant="caption" color={palette.textSecondary}>
+                          {room.building} · {room.capacity} personnes
+                          {room.isAvailableNow === false ? ' · Occupée' : ' · Disponible'}
+                        </Typography>
                       </View>
-                    )}
-                  </View>
-                )}
-                {selectedMeetingRoom && (
-                  <View style={styles.roomDetail}>
-                    <Ionicons name="information-circle-outline" size={16} color={semanticColors.primary} />
-                    <Typography variant="caption" color={semanticColors.primary}>
-                      {selectedMeetingRoom.name} · {selectedMeetingRoom.building} · {selectedMeetingRoom.capacity} pers. max
-                      {selectedMeetingRoom.isAvailableNow !== false ? ' · Disponible' : ' · Occupée'}
-                    </Typography>
-                  </View>
+                      {/* Checkmark */}
+                      {selectedMeetingRoom?.id === room.id
+                        ? <Ionicons name="checkmark-circle" size={22} color={semanticColors.primary} />
+                        : <Ionicons name="radio-button-off-outline" size={22} color={palette.border} />
+                      }
+                    </TouchableOpacity>
+                  ))
                 )}
               </View>
             )}
@@ -841,5 +797,37 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     padding: spacing.sm,
     marginTop: 4,
+  },
+  roomPickerBox: {
+    backgroundColor: palette.white,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: semanticColors.primary,
+    overflow: 'hidden',
+    marginTop: spacing.xs,
+  },
+  roomPickerLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  roomPickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    backgroundColor: palette.white,
+  },
+  roomPickerItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: palette.border,
+  },
+  roomPickerItemSelected: {
+    backgroundColor: 'rgba(20,88,71,0.06)',
+  },
+  roomPickerItemDisabled: {
+    opacity: 0.45,
   },
 });
