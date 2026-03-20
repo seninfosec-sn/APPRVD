@@ -22,20 +22,41 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   login: async (email: string, _password: string) => {
     set({ isLoading: true });
-    // Simulation d'un appel API
-    await new Promise((r) => setTimeout(r, 1200));
-    const mockSession: AuthSession = {
-      accessToken: 'mock-jwt-token-' + Date.now(),
-      refreshToken: 'mock-refresh-token',
-      expiresAt: Date.now() + 3600 * 1000,
-      user: { ...currentUser, email },
-    };
-    set({
-      session: mockSession,
-      user: { ...currentUser, email },
-      isAuthenticated: true,
-      isLoading: false,
-    });
+    try {
+      // Try to find user in DB
+      const res = await fetch(`/api/users/search?q=${encodeURIComponent(email)}`);
+      let dbUser = null;
+      if (res.ok) {
+        const users = await res.json();
+        dbUser = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+      }
+
+      // Mock user fallback (keeps existing mock data working)
+      const mockUser = {
+        id: dbUser?.id || 'u1',
+        email: dbUser?.email || email,
+        displayName: dbUser?.displayName || email.split('@')[0],
+        avatarUrl: dbUser?.avatarUrl || undefined,
+        phone: undefined,
+        provider: 'email' as const,
+        role: 'admin' as const,
+        organizationId: 'org1',
+        createdAt: new Date().toISOString(),
+        notificationPrefs: { pushEnabled: true, emailEnabled: true, smsEnabled: false, reminderMinutesBefore: 15 as const },
+        stats: { totalReservations: 0, confirmedReservations: 0, attendanceRate: 0 },
+      };
+
+      const session: AuthSession = {
+        accessToken: 'mock-token-' + Date.now(),
+        refreshToken: 'mock-refresh',
+        expiresAt: Date.now() + 3600000,
+        user: mockUser,
+      };
+      set({ session, user: mockUser, isAuthenticated: true, isLoading: false });
+    } catch {
+      set({ isLoading: false });
+      throw new Error('Login failed');
+    }
   },
 
   loginWithSSO: async (provider: 'google' | 'apple') => {

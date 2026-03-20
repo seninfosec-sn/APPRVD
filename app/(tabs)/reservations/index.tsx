@@ -8,6 +8,7 @@ import { ReservationCard } from '../../../src/components/reservation/Reservation
 import { palette, semanticColors } from '../../../src/constants/colors';
 import { spacing, radius } from '../../../src/constants/spacing';
 import { useReservationStore } from '../../../src/store/reservationStore';
+import { useAuthStore } from '../../../src/store/authStore';
 import { Reservation } from '../../../src/types';
 
 type FilterKey = 'all' | 'meeting' | 'room' | 'pending';
@@ -23,14 +24,15 @@ export default function ReservationsScreen() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [refreshing, setRefreshing] = useState(false);
   const { reservations, loadReservations, getPending } = useReservationStore();
+  const { user } = useAuthStore();
 
   useEffect(() => {
-    loadReservations();
-  }, []);
+    if (user?.id) loadReservations(user.id);
+  }, [user?.id]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadReservations();
+    if (user?.id) await loadReservations(user.id);
     setRefreshing(false);
   };
 
