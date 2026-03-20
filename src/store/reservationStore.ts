@@ -125,7 +125,10 @@ export const useReservationStore = create<ReservationStore>((set, get) => ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'confirm', userId }),
       });
-      if (!res.ok) throw new Error('Erreur confirmation');
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Erreur confirmation');
+      }
       const updated = await res.json();
       set((state) => ({
         reservations: state.reservations.map((r) => (r.id === id ? updated : r)),

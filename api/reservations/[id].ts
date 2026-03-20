@@ -50,19 +50,20 @@ export default async function handler(req: any, res: any) {
 
   if (req.method === 'PATCH') {
     try {
-      const body = req.body;
+      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const now = new Date().toISOString();
       const found = await find(sql, id);
       if (!found) return res.status(404).json({ error: 'Non trouvé' });
 
       if (body.action === 'confirm' && found.table === 'meeting') {
         const r = found.row as any;
-        const isInitiator = body.userId === r.initiator?.id;
+        const initiatorId = typeof r.initiator === 'string' ? JSON.parse(r.initiator).id : r.initiator?.id;
+        const isInitiator = body.userId === initiatorId;
         const newConfInit = isInitiator ? true : r.confirmation_initiator;
         const newConfInvitee = !isInitiator ? true : r.confirmation_invitee;
         const bothConfirmed = newConfInit && newConfInvitee;
         const newStatus = bothConfirmed ? 'confirmed' : r.status;
-        const qrToken = bothConfirmed ? (r.qr_token || uid()) : r.qr_token;
+        const qrToken = bothConfirmed ? (r.qr_token || uid()) : (r.qr_token || null);
         await sql`
           UPDATE meeting_invites SET
             confirmation_initiator=${newConfInit},
@@ -71,12 +72,12 @@ export default async function handler(req: any, res: any) {
             updated_at=${now}::timestamptz
           WHERE id=${id}
         `;
-        if (bothConfirmed) {
+        if (bothConfirmed && r.chat_thread_id) {
           await sql`
             INSERT INTO chat_messages (id,thread_id,sender_id,sender_name,content,type,sent_at,read_by)
             VALUES (${uid()},${r.chat_thread_id},'system','Système',
               'Rendez-vous confirmé par les deux parties.','system',
-              ${now}::timestamptz,'{}')
+              ${now}::timestamptz,${[]})
           `;
         }
       } else if (body.status === 'cancelled') {

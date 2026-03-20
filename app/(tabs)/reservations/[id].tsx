@@ -73,13 +73,18 @@ export default function ReservationDetailScreen() {
 
   const slot = (reservation as any).slot;
 
+  const isInitiator = user?.id === (meeting?.initiator as any)?.id;
+  const isInvitee = user?.id === (meeting?.invitee as any)?.id;
+  const myConfirmationDone = isInitiator
+    ? meeting?.confirmations?.initiator
+    : meeting?.confirmations?.invitee;
   const canConfirm =
     isMeeting &&
     meeting!.status !== 'confirmed' &&
     meeting!.status !== 'cancelled' &&
     meeting!.status !== 'expired' &&
-    user?.id === meeting!.invitee?.id &&
-    !meeting!.confirmations?.invitee;
+    (isInitiator || isInvitee) &&
+    !myConfirmationDone;
 
   const canCancel =
     reservation.status !== 'cancelled' && reservation.status !== 'expired';
@@ -90,8 +95,8 @@ export default function ReservationDetailScreen() {
     try {
       await confirmMeeting(id, user.id);
       showSnackbar('Rendez-vous confirmé !', 'success');
-    } catch {
-      showSnackbar('Erreur lors de la confirmation.', 'error');
+    } catch (err: any) {
+      showSnackbar(err.message || 'Erreur lors de la confirmation.', 'error');
     } finally {
       setActionLoading(false);
     }
