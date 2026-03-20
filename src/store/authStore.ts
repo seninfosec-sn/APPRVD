@@ -20,42 +20,43 @@ export const useAuthStore = create<AuthStore>((set) => ({
   isLoading: false,
   isAuthenticated: false,
 
-  login: async (email: string, _password: string) => {
+  login: async (email: string, password: string) => {
     set({ isLoading: true });
     try {
-      // Try to find user in DB
-      const res = await fetch(`/api/users/search?q=${encodeURIComponent(email)}`);
-      let dbUser = null;
-      if (res.ok) {
-        const users = await res.json();
-        dbUser = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        set({ isLoading: false });
+        throw new Error(err.error || 'Email ou mot de passe incorrect');
       }
-
-      // Mock user fallback (keeps existing mock data working)
-      const mockUser = {
-        id: dbUser?.id || 'u1',
-        email: dbUser?.email || email,
-        displayName: dbUser?.displayName || email.split('@')[0],
-        avatarUrl: dbUser?.avatarUrl || undefined,
+      const dbUser = await res.json();
+      const user: User = {
+        id: dbUser.id,
+        email: dbUser.email,
+        displayName: dbUser.displayName,
+        avatarUrl: dbUser.avatarUrl || undefined,
         phone: undefined,
         provider: 'email' as const,
-        role: 'admin' as const,
-        organizationId: 'org1',
-        createdAt: new Date().toISOString(),
+        role: dbUser.role || 'user',
+        organizationId: 'afcac',
+        createdAt: dbUser.createdAt || new Date().toISOString(),
         notificationPrefs: { pushEnabled: true, emailEnabled: true, smsEnabled: false, reminderMinutesBefore: 15 as const },
         stats: { totalReservations: 0, confirmedReservations: 0, attendanceRate: 0 },
       };
-
       const session: AuthSession = {
-        accessToken: 'mock-token-' + Date.now(),
-        refreshToken: 'mock-refresh',
+        accessToken: 'token-' + Date.now(),
+        refreshToken: 'refresh-' + Date.now(),
         expiresAt: Date.now() + 3600000,
-        user: mockUser,
+        user,
       };
-      set({ session, user: mockUser, isAuthenticated: true, isLoading: false });
-    } catch {
+      set({ session, user, isAuthenticated: true, isLoading: false });
+    } catch (err: any) {
       set({ isLoading: false });
-      throw new Error('Login failed');
+      throw err;
     }
   },
 

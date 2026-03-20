@@ -20,8 +20,8 @@ import { useAuthStore } from '../../src/store/authStore';
 import { useUIStore } from '../../src/store/uiStore';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('aissatou.diallo@entreprise.sn');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState('aissatou.diallo@afcac.org');
+  const [password, setPassword] = useState('Afcac2025!');
   const [emailError, setEmailError] = useState('');
   const { login, loginWithSSO, isLoading } = useAuthStore();
   const { showSnackbar } = useUIStore();
